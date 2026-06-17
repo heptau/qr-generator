@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="cs">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+		<meta name="apple-mobile-web-app-capable" content="yes" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+		<meta name="apple-mobile-web-app-title" content="QR Generator" />
+		<link rel="apple-touch-icon" href="qr-generator-logo.png" />
+		<meta name="theme-color" content="#F7F7F8" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#18181A" media="(prefers-color-scheme: dark)" />
+		<title data-i18n="app.title">QR Generátor</title>
+		<link rel="icon" href="qr-generator-logo.png" />
+		<link rel="manifest" href="manifest.json" />
+		<link rel="stylesheet" href="style.css" />
+		<script src="lang/i18n.js" defer></script>
+		<script
+			src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.1/qrcode.min.js"
+			integrity="sha512-PEhlWBZBrQL7flpJPY8lXx8tIN7HWX912GzGhFTDqA3iWFrakVH3lVHomCoU9BhfKzgxfEk6EG2C3xej+9srOQ=="
+			crossorigin="anonymous"
+			referrerpolicy="no-referrer"
+			defer
+		></script>
+	</head>
+	<body>
+		<div class="app-container">
+			<header class="app-header">
+				<h1 data-i18n="app.title">QR Generátor</h1>
+			</header>
+
+			<div class="controls-outer-container">
+				<div class="controls-container">
+					<fieldset class="control-group">
+						<div class="form-row">
+							<label for="qrTypeSelect" data-i18n="label.content">Obsah:</label>
+							<select id="qrTypeSelect">
+								<option value="text" selected data-i18n="qrType.text">Text</option>
+								<option value="url" data-i18n="qrType.url">URL Adresa</option>
+								<option value="wifi" data-i18n="qrType.wifi">Wi-Fi Připojení</option>
+								<option value="geo" data-i18n="qrType.geo">Geolokace</option>
+								<option value="email" data-i18n="qrType.email">E-mail</option>
+								<option value="tel" data-i18n="qrType.tel">Telefonní číslo</option>
+								<option value="sms" data-i18n="qrType.sms">SMS zpráva</option>
+								<option value="sepa" data-i18n="qrType.sepa">SEPA Platba (EUR)</option>
+								<option value="spayd" data-i18n="qrType.spayd">QR Platba (CZ)</option>
+							</select>
+						</div>
+					</fieldset>
+
+					<div id="dynamic-form-fields-container" class="dynamic-fields-wrapper"></div>
+
+					<fieldset class="control-group">
+						<div class="form-row">
+							<label for="ecLevel" data-i18n="label.errorCorrection">Korekce chyb:</label>
+							<select id="ecLevel">
+								<option value="L" data-i18n="ec.L">Nízká</option>
+								<option value="M" selected data-i18n="ec.M">Střední</option>
+								<option value="Q" data-i18n="ec.Q">Čtvrtinová</option>
+								<option value="H" data-i18n="ec.H">Vysoká</option>
+							</select>
+						</div>
+						<div class="form-row">
+							<span class="label-like" data-i18n="label.color">Barva:</span>
+							<div class="color-inputs-container">
+								<div class="color-input-item">
+									<label for="fgColor" class="color-label" data-i18n="label.foreground">Popředí</label>
+									<input id="fgColor" type="color" value="#000000" />
+								</div>
+								<div class="color-input-item">
+									<label for="bgColor" class="color-label" data-i18n="label.background">Pozadí</label>
+									<input id="bgColor" type="color" value="#ffffff" />
+								</div>
+							</div>
+						</div>
+					</fieldset>
+
+					<div class="main-content-wrapper">
+						<div class="main-content"><canvas id="qrCanvas"></canvas></div>
+					</div>
+
+					<div class="download-row">
+						<select id="exportFormatSelect" class="format-select">
+							<option value="png">PNG</option>
+							<option value="webp">WebP</option>
+							<option value="gif">GIF</option>
+						</select>
+						<button class="action-button" id="downloadButton" data-i18n="button.download" disabled>Stáhnout</button>
+						<button class="share-button" id="copyButton" hidden aria-label="Copy">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+								<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+							</svg>
+						</button>
+						<button class="share-button" id="shareButton" hidden aria-label="Share">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+								<polyline points="16 6 12 2 8 6" />
+								<line x1="12" y1="2" x2="12" y2="15" />
+							</svg>
+						</button>
+					</div>
+					<div id="diagnosticMessageContainer" role="alert" aria-live="polite"></div>
+				</div>
+			</div>
+		</div>
+
+		<script src="script.js" defer></script>
+	</body>
+</html>

@@ -25,14 +25,14 @@
 /* Barvy pro Dark Mode */
 @media (prefers-color-scheme: dark) {
 	:root {
-		--ios-blue: #0A84FF;
+		--ios-blue: #0a84ff;
 		/* iOS Blue Dark */
 		--ios-background-grouped: var(--ios-background-grouped-dark, #1c1c1e);
 		--ios-background-page: var(--ios-background-page-dark, #000000);
 		--ios-separator-color: var(--ios-separator-color-dark, #38383a);
 		--ios-text-color: var(--ios-text-color-dark, #ffffff);
 		--ios-secondary-text-color: var(--ios-secondary-text-color-dark, #8e8e93);
-		--ios-placeholder-color: var(--ios-placeholder-color-dark, #6D6D70);
+		--ios-placeholder-color: var(--ios-placeholder-color-dark, #6d6d70);
 		--ios-header-background: var(--ios-header-background-dark, rgba(28, 28, 30, 0.85));
 		/* --ios-button-text-color: #fff; zůstává stejná */
 
@@ -47,17 +47,17 @@
 		/* Label Dark - Primary */
 		--ios-secondary-text-color-dark: #8e8e93;
 		/* Label Dark - Secondary */
-		--ios-placeholder-color-dark: #6D6D70;
+		--ios-placeholder-color-dark: #6d6d70;
 		/* Placeholder Dark (odpovídá Label Tertiary) */
 		--ios-header-background-dark: rgba(28, 28, 30, 0.85);
 		/* Tmavší header s průsvitností */
 
 		/* Barvy pro notifikace (tmavý režim) */
-		--ios-red: var(--ios-red-dark, #FF453A);
-		--ios-green: var(--ios-green-dark, #30D158);
-		--ios-red-dark: #FF453A;
+		--ios-red: var(--ios-red-dark, #ff453a);
+		--ios-green: var(--ios-green-dark, #30d158);
+		--ios-red-dark: #ff453a;
 		/* iOS Red Dark */
-		--ios-green-dark: #30D158;
+		--ios-green-dark: #30d158;
 		/* iOS Green Dark */
 
 		/* Barvy pro small action button (tmavý režim) */
@@ -75,7 +75,7 @@ body {
 	padding: 0;
 	height: 100%;
 	background: var(--ios-background-page);
-	font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 	display: flex;
 	flex-direction: column;
 	-webkit-user-select: none;
@@ -132,6 +132,11 @@ body {
 	flex-direction: column;
 	width: 100%;
 	box-sizing: border-box;
+
+	@supports (padding-left: env(safe-area-inset-left)) {
+		padding-left: env(safe-area-inset-left);
+		padding-right: env(safe-area-inset-right);
+	}
 }
 
 .controls-container {
@@ -178,6 +183,7 @@ body {
 	border-radius: 10px;
 	width: calc(100% - 30px);
 	max-width: 500px;
+	min-width: 0;
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
@@ -209,17 +215,17 @@ body {
 	padding: 11px 0;
 }
 
-.dynamic-fields-wrapper .form-row label[for^="field-hiddenSSID"] {
+.dynamic-fields-wrapper .form-row label[for^='field-hiddenSSID'] {
 	flex-grow: 1;
 }
 
-.form-row input[type="text"],
-.form-row input[type="url"],
-.form-row input[type="email"],
-.form-row input[type="tel"],
-.form-row input[type="password"],
-.form-row input[type="number"],
-.form-row input[type="date"],
+.form-row input[type='text'],
+.form-row input[type='url'],
+.form-row input[type='email'],
+.form-row input[type='tel'],
+.form-row input[type='password'],
+.form-row input[type='number'],
+.form-row input[type='date'],
 .form-row textarea,
 .form-row select {
 	flex-grow: 1;
@@ -235,7 +241,7 @@ body {
 	width: 100%;
 }
 
-.form-row input[type="date"] {
+.form-row input[type='date'] {
 	min-width: 120px;
 }
 
@@ -265,7 +271,7 @@ body {
 }
 
 @media (prefers-color-scheme: dark) {
-	.form-row input[type="date"]::-webkit-calendar-picker-indicator {
+	.form-row input[type='date']::-webkit-calendar-picker-indicator {
 		filter: invert(1);
 	}
 }
@@ -304,7 +310,7 @@ body {
 	text-align: left;
 }
 
-.form-row input[type="checkbox"] {
+.form-row input[type='checkbox'] {
 	width: 22px;
 	height: 22px;
 	margin: 0;
@@ -317,11 +323,13 @@ body {
 	position: relative;
 	cursor: pointer;
 	outline: none;
-	transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+	transition:
+		background-color 0.2s ease-in-out,
+		border-color 0.2s ease-in-out;
 	flex-shrink: 0;
 }
 
-.form-row input[type="checkbox"]:checked {
+.form-row input[type='checkbox']:checked {
 	background-color: var(--ios-blue);
 	border-color: var(--ios-blue);
 	background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 9" width="12" height="9"><polyline points="1 4.5 4.5 8 11 1" stroke="%23FFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>');
@@ -334,8 +342,10 @@ body {
 	display: flex;
 	justify-content: flex-end;
 	align-items: center;
-	flex-grow: 1;
-	gap: 15px;
+	flex-wrap: wrap;
+	gap: 6px 10px;
+	margin-left: auto;
+	min-width: 0;
 }
 
 .color-input-item {
@@ -349,7 +359,7 @@ body {
 	color: var(--ios-secondary-text-color);
 }
 
-input[type="color"] {
+input[type='color'] {
 	width: 30px;
 	height: 30px;
 	padding: 0;
@@ -362,17 +372,17 @@ input[type="color"] {
 	cursor: pointer;
 }
 
-input[type="color"]::-webkit-color-swatch-wrapper {
+input[type='color']::-webkit-color-swatch-wrapper {
 	padding: 2px;
 	box-sizing: border-box;
 }
 
-input[type="color"]::-webkit-color-swatch {
+input[type='color']::-webkit-color-swatch {
 	border: none;
 	border-radius: 50%;
 }
 
-input[type="color"]::-moz-color-swatch {
+input[type='color']::-moz-color-swatch {
 	border: none;
 	border-radius: 50%;
 }
@@ -394,6 +404,75 @@ button.action-button {
 
 button.action-button:active {
 	filter: brightness(0.85);
+}
+
+button.action-button:disabled {
+	opacity: 0.4;
+	cursor: default;
+	pointer-events: none;
+}
+
+.download-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: calc(100% - 30px);
+	max-width: 500px;
+	box-sizing: border-box;
+}
+
+.download-row .action-button {
+	flex: 1;
+	width: auto;
+}
+
+.share-button {
+	display: none;
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	border: none;
+	border-radius: 10px;
+	background-color: var(--ios-blue);
+	color: var(--ios-button-text-color);
+	cursor: pointer;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.share-button:not([hidden]) {
+	display: flex;
+}
+
+.share-button:active {
+	filter: brightness(0.85);
+}
+
+.share-button:disabled {
+	opacity: 0.4;
+	cursor: default;
+	pointer-events: none;
+}
+
+.format-select {
+	font-size: 17px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 0.5px solid var(--ios-separator-color);
+	background-color: var(--ios-background-grouped);
+	color: var(--ios-text-color);
+	-webkit-appearance: none;
+	appearance: none;
+	outline: none;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+	.format-select {
+		background-color: var(--ios-small-button-background-dark, #2c2c2e);
+	}
 }
 
 button.small-action-button {
@@ -431,8 +510,7 @@ button.small-action-button:active {
 	box-sizing: border-box;
 }
 
-#diagnosticMessageContainer>p,
-#diagnosticMessage {
+#diagnosticMessageContainer > p {
 	font-weight: normal;
 	text-align: center;
 	padding: 8px 15px;
@@ -448,36 +526,30 @@ button.small-action-button:active {
 	border-style: solid;
 }
 
-/* Styly pro chybovou zprávu (červená) */
-#diagnosticMessageContainer>p:not([style*="color:green"]),
-#diagnosticMessage {
+#diagnosticMessageContainer > p.message-error {
 	color: var(--ios-red);
 	background-color: rgba(var(--ios-red), 0.1);
 	border-color: rgba(var(--ios-red), 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
-
-	#diagnosticMessageContainer>p:not([style*="color:green"]),
-	#diagnosticMessage {
+	#diagnosticMessageContainer > p.message-error {
 		background-color: rgba(255, 69, 58, 0.25);
 		border-color: rgba(255, 69, 58, 0.5);
 		color: var(--ios-red-dark);
 	}
 }
 
-/* Styly pro úspěšnou zprávu (zelená) */
-#diagnosticMessageContainer>p[style*="color:green"] {
+#diagnosticMessageContainer > p.message-success {
 	color: var(--ios-green);
 	background-color: rgba(var(--ios-green), 0.1);
 	border-color: rgba(var(--ios-green), 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
-	#diagnosticMessageContainer>p[style*="color:green"] {
+	#diagnosticMessageContainer > p.message-success {
 		color: var(--ios-green-dark);
 		background-color: rgba(48, 209, 88, 0.2);
 		border-color: rgba(48, 209, 88, 0.4);
 	}
 }
-
