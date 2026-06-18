@@ -8,6 +8,13 @@ window.__ = function (k) {
 		'label.foreground': 'Foreground',
 		'label.background': 'Background',
 		'button.download': 'Download',
+		'button.done': 'Done',
+
+		'section.type': 'QR TYPE',
+		'section.content': 'CONTENT',
+		'section.options': 'OPTIONS',
+		'section.preview': 'PREVIEW',
+		'section.export': 'EXPORT',
 
 		'format.png': 'PNG',
 		'format.webp': 'WebP',
@@ -89,6 +96,7 @@ window.__ = function (k) {
 		'placeholder.sepa_message': 'Payment note',
 
 		'msg.enterData': 'Enter data for QR code',
+		'msg.dataTooLong': 'Data is too long for a QR code.',
 		'msg.geolocating': 'Getting location...',
 		'msg.geolocationSuccess': 'Location found!',
 		'msg.geolocationError': 'Error getting location: ',

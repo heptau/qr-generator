@@ -8,6 +8,13 @@ window.__ = function (k) {
 		'label.foreground': 'Popředí',
 		'label.background': 'Pozadí',
 		'button.download': 'Stáhnout',
+		'button.done': 'Hotovo',
+
+		'section.type': 'TYP QR',
+		'section.content': 'OBSAH',
+		'section.options': 'VOLBY',
+		'section.preview': 'NÁHLED',
+		'section.export': 'EXPORT',
 
 		'format.png': 'PNG',
 		'format.webp': 'WebP',
@@ -49,7 +56,7 @@ window.__ = function (k) {
 		'field.spayd_ks': 'Konst. symb. (X-KS)',
 		'field.spayd_ss': 'Spec. symb. (X-SS)',
 		'field.spayd_message': 'Zpráva (MSG)',
-		'field.spayd_date': 'Datum splat. (DT)',
+		'field.spayd_date': 'Splatnost (DT)',
 		'field.sepa_name': 'Jméno příjemce',
 		'field.sepa_iban': 'IBAN příjemce',
 		'field.sepa_bic': 'BIC (SWIFT)',
@@ -89,6 +96,7 @@ window.__ = function (k) {
 		'placeholder.sepa_message': 'Poznámka k platbě',
 
 		'msg.enterData': 'Zadejte data pro QR kód',
+		'msg.dataTooLong': 'Data jsou pro QR kód příliš dlouhá.',
 		'msg.geolocating': 'Zjišťuji polohu...',
 		'msg.geolocationSuccess': 'Poloha zjištěna!',
 		'msg.geolocationError': 'Chyba při zjišťování polohy: ',

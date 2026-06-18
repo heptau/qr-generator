@@ -12,11 +12,46 @@
 		downloadBtn,
 		exportFormatSelect,
 		shareBtn,
-		copyBtn;
+		copyBtn,
+		qrGenerationError;
 	const dpr = window.devicePixelRatio || 1;
 
 	function tr(key) {
 		return typeof window.__ === 'function' ? window.__(key) : key;
+	}
+
+	function czAccountToIban(input) {
+		if (!input) return null;
+		var cleaned = input.replace(/\s+/g, '');
+
+		var parts = cleaned.split('/');
+		if (parts.length !== 2) return null;
+
+		var beforeSlash = parts[0];
+		var bankCode = parts[1];
+
+		if (!beforeSlash.includes('-') && beforeSlash.length > 10) {
+			beforeSlash = beforeSlash.slice(0, -10) + '-' + beforeSlash.slice(-10);
+			cleaned = beforeSlash + '/' + bankCode;
+		}
+
+		var match = cleaned.match(/^(?:(\d{0,6})-)?(\d{3,20})\/(\d{4})$/);
+		if (!match) return null;
+
+		var prefix = (match[1] || '').padStart(6, '0');
+		var account = match[2].padStart(10, '0');
+		bankCode = match[3];
+
+		var bban = bankCode + prefix + account;
+		var checkStr = bban + '123500';
+
+		var mod = 0;
+		for (var i = 0; i < checkStr.length; i++) {
+			mod = (mod * 10 + parseInt(checkStr[i], 10)) % 97;
+		}
+		var checkDigits = (98 - mod).toString().padStart(2, '0');
+
+		return 'CZ' + checkDigits + bban;
 	}
 
 	const qrCodeTypes = {
@@ -138,7 +173,7 @@
 					placeholderKey: 'placeholder.spayd_iban',
 					inputmode: 'text',
 					autocapitalize: 'characters',
-					pattern: '[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}',
+					pattern: '[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[A-Z0-9]{0,16}|\\d{0,6}-?\\d{3,20}/\\d{4}',
 				},
 				{
 					name: 'spayd_amount',
@@ -209,7 +244,9 @@
 					}
 				};
 
-				appendIfPresent('ACC', data.spayd_iban ? data.spayd_iban.replace(/\s+/g, '').toUpperCase() : null);
+				var rawIban = data.spayd_iban ? data.spayd_iban.replace(/\s+/g, '').toUpperCase() : '';
+				var iban = czAccountToIban(rawIban) || rawIban;
+				appendIfPresent('ACC', iban || null);
 				appendAmount('AM', data.spayd_amount);
 				appendIfPresent('CC', data.spayd_currency || 'CZK');
 				appendIfPresent('X-VS', data.spayd_vs, true, 10);
@@ -242,7 +279,7 @@
 					placeholderKey: 'placeholder.sepa_iban',
 					inputmode: 'text',
 					autocapitalize: 'characters',
-					pattern: '[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[0-9]{7}([A-Z0-9]?){0,16}',
+					pattern: '[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[A-Z0-9]{0,16}|\\d{0,6}-?\\d{3,20}/\\d{4}',
 				},
 				{
 					name: 'sepa_bic',
@@ -294,7 +331,8 @@
 
 				const bic = data.sepa_bic ? data.sepa_bic.toUpperCase().replace(/\s+/g, '') : '';
 				const name = data.sepa_name || '';
-				const iban = data.sepa_iban ? data.sepa_iban.toUpperCase().replace(/\s+/g, '') : '';
+				const rawIban = data.sepa_iban ? data.sepa_iban.toUpperCase().replace(/\s+/g, '') : '';
+				const iban = czAccountToIban(rawIban) || rawIban;
 				let amount = '';
 				if (data.sepa_amount) {
 					const numValue = parseFloat(data.sepa_amount);
@@ -412,14 +450,23 @@
 				label.textContent = field.labelKey ? tr(field.labelKey) : field.label;
 				row.appendChild(label);
 
+				const toggleLabel = document.createElement('label');
+				toggleLabel.className = 'toggle-switch';
+				toggleLabel.htmlFor = `field-${field.name}`;
+
 				const inputElement = document.createElement('input');
 				inputElement.type = 'checkbox';
 				inputElement.id = `field-${field.name}`;
 				inputElement.name = field.name;
 				inputElement.checked = field.defaultValue === true;
 
+				const slider = document.createElement('span');
+				slider.className = 'toggle-slider';
+
 				inputElement.addEventListener('change', updateQR);
-				row.appendChild(inputElement);
+				toggleLabel.appendChild(inputElement);
+				toggleLabel.appendChild(slider);
+				row.appendChild(toggleLabel);
 			} else {
 				const label = document.createElement('label');
 				label.htmlFor = `field-${field.name}`;
@@ -441,7 +488,8 @@
 					});
 				} else {
 					inputElement = document.createElement('input');
-					inputElement.type = field.type;
+					inputElement.type = field.type === 'text' ? 'search' : field.type;
+					if (field.type === 'text') inputElement.autocomplete = 'off';
 					if (field.step) inputElement.step = field.step;
 					if (field.maxLength) inputElement.maxLength = field.maxLength;
 					if (field.pattern) inputElement.pattern = field.pattern;
@@ -464,6 +512,16 @@
 							this.setSelectionRange(start, end);
 						});
 					}
+				}
+
+				if (field.name.includes('iban')) {
+					inputElement.addEventListener('blur', function () {
+						var converted = czAccountToIban(this.value);
+						if (converted) {
+							this.value = converted;
+						}
+						updateQR();
+					});
 				}
 
 				inputElement.addEventListener('input', updateQR);
@@ -506,14 +564,6 @@
 		exportFormatSelect = document.getElementById('exportFormatSelect');
 		shareBtn = document.getElementById('shareButton');
 		copyBtn = document.getElementById('copyButton');
-
-		const style = getComputedStyle(mainDisplayCanvas);
-		const cssWidth = parseFloat(style.width) || 220;
-		const cssHeight = parseFloat(style.height) || 220;
-
-		mainDisplayCanvas.width = cssWidth * dpr;
-		mainDisplayCanvas.height = cssHeight * dpr;
-		mainDisplayCtx.scale(dpr, dpr);
 	}
 
 	function generateQRForDisplay(dataString, ecLevel, fgHex, bgHex) {
@@ -525,51 +575,74 @@
 			return;
 		}
 
-		const cssWidth = mainDisplayCanvas.width / dpr;
-		const cssHeight = mainDisplayCanvas.height / dpr;
+		var displayModulePx = 8;
+		var margin = 2;
 
-		mainDisplayCtx.fillStyle = bgHex;
-		mainDisplayCtx.fillRect(0, 0, cssWidth, cssHeight);
-
-		const qrDrawSize = Math.min(cssWidth, cssHeight);
-
-		if (qrDrawSize <= 0) {
-			console.warn('generateQRForDisplay: neplatná velikost:', qrDrawSize);
+		if (isInputEmpty(dataString)) {
+			qrGenerationError = false;
+			var placeholderSize = 200;
+			mainDisplayCanvas.width = placeholderSize * dpr;
+			mainDisplayCanvas.height = placeholderSize * dpr;
+			mainDisplayCanvas.style.width = placeholderSize + 'px';
+			mainDisplayCtx.scale(dpr, dpr);
+			mainDisplayCtx.fillStyle = bgHex;
+			mainDisplayCtx.fillRect(0, 0, placeholderSize, placeholderSize);
+			mainDisplayCtx.font = '14px Arial';
+			mainDisplayCtx.fillStyle = '#AAAAAA';
+			mainDisplayCtx.textAlign = 'center';
+			mainDisplayCtx.fillText(tr('msg.enterData'), placeholderSize / 2, placeholderSize / 2);
 			return;
 		}
 
-		const opts = {
-			errorCorrectionLevel: ecLevel,
-			width: qrDrawSize,
-			margin: 2,
-			color: { dark: fgHex, light: bgHex },
-		};
+		try {
+			var qr = QRCode.create(dataString || ' ', { errorCorrectionLevel: ecLevel });
+		} catch (e) {
+			qrGenerationError = true;
+			var errSize = 200;
+			mainDisplayCanvas.width = errSize * dpr;
+			mainDisplayCanvas.height = errSize * dpr;
+			mainDisplayCanvas.style.width = errSize + 'px';
+			mainDisplayCtx.scale(dpr, dpr);
+			mainDisplayCtx.fillStyle = bgHex;
+			mainDisplayCtx.fillRect(0, 0, errSize, errSize);
+			mainDisplayCtx.font = 'bold 12px Arial';
+			mainDisplayCtx.fillStyle = '#cc0000';
+			mainDisplayCtx.textAlign = 'center';
+			mainDisplayCtx.fillText(tr('msg.dataTooLong'), errSize / 2, errSize / 2);
+			return;
+		}
 
-		const tempCanvas = document.createElement('canvas');
+		qrGenerationError = false;
 
-		QRCode.toCanvas(tempCanvas, dataString || ' ', opts, function (error) {
-			if (error) {
-				console.error('Chyba generování QR:', error);
-				if (dataString.length === 0) {
-					mainDisplayCtx.font = `${14 * dpr}px Arial`;
-					mainDisplayCtx.fillStyle = '#AAAAAA';
-					mainDisplayCtx.textAlign = 'center';
-					mainDisplayCtx.fillText(tr('msg.enterData'), cssWidth / 2, cssHeight / 2);
+		var numModules = qr.modules.size;
+		var qrData = qr.modules.data;
+		var displaySize = (numModules + 2 * margin) * displayModulePx;
+
+		mainDisplayCanvas.width = Math.round(displaySize * dpr);
+		mainDisplayCanvas.height = Math.round(displaySize * dpr);
+		mainDisplayCanvas.style.width = Math.round(displaySize) + 'px';
+
+		mainDisplayCtx.scale(dpr, dpr);
+
+		mainDisplayCtx.fillStyle = bgHex;
+		mainDisplayCtx.fillRect(0, 0, displaySize, displaySize);
+		mainDisplayCtx.fillStyle = fgHex;
+
+		var quietPx = margin * displayModulePx;
+		for (var y = 0; y < numModules; y++) {
+			for (var x = 0; x < numModules; x++) {
+				if (qrData[y * numModules + x]) {
+					mainDisplayCtx.fillRect(quietPx + x * displayModulePx, quietPx + y * displayModulePx, displayModulePx, displayModulePx);
 				}
-				return;
 			}
-			const x = (cssWidth - tempCanvas.width / dpr) / 2;
-			const y = (cssHeight - tempCanvas.height / dpr) / 2;
-
-			mainDisplayCtx.drawImage(tempCanvas, x, y, tempCanvas.width / dpr, tempCanvas.height / dpr);
-		});
+		}
 	}
 
 	function updateButtonsState() {
-		var empty = isInputEmpty(getCurrentQrDataString());
-		if (downloadBtn) downloadBtn.disabled = empty;
-		if (shareBtn && !shareBtn.hidden) shareBtn.disabled = empty;
-		if (copyBtn && !copyBtn.hidden) copyBtn.disabled = empty;
+		var disabled = isInputEmpty(getCurrentQrDataString()) || qrGenerationError;
+		if (downloadBtn) downloadBtn.disabled = disabled;
+		if (shareBtn && !shareBtn.hidden) shareBtn.disabled = disabled;
+		if (copyBtn && !copyBtn.hidden) copyBtn.disabled = disabled;
 	}
 
 	function updateQR() {
@@ -684,7 +757,17 @@
 		return new Blob([out], { type: 'image/png' });
 	}
 
-	async function renderQrToCanvas(dataString, ecLevel, fgHex, bgHex) {
+	async function exportQrCode(dataString, ecLevel, fgHex, bgHex, format) {
+		if (format === 'png') {
+			return createOptimizedQrBlob(dataString, ecLevel, fgHex, bgHex);
+		}
+		if (format === 'gif') {
+			return createOptimizedGifBlob(dataString, ecLevel, fgHex, bgHex);
+		}
+		return createOptimizedWebpBlob(dataString, ecLevel, fgHex, bgHex);
+	}
+
+	async function createOptimizedGifBlob(dataString, ecLevel, fgHex, bgHex) {
 		const qr = await QRCode.create(dataString || ' ', { errorCorrectionLevel: ecLevel });
 		const numModules = qr.modules.size;
 		const qrData = qr.modules.data;
@@ -707,21 +790,37 @@
 				}
 			}
 		}
-		return canvas;
-	}
-
-	function canvasToBlob(canvas, mimeType) {
 		return new Promise(function (resolve) {
-			canvas.toBlob(resolve, mimeType);
+			canvas.toBlob(resolve, 'image/gif');
 		});
 	}
 
-	async function exportQrCode(dataString, ecLevel, fgHex, bgHex, format) {
-		if (format === 'png') {
-			return createOptimizedQrBlob(dataString, ecLevel, fgHex, bgHex);
+	async function createOptimizedWebpBlob(dataString, ecLevel, fgHex, bgHex) {
+		const qr = await QRCode.create(dataString || ' ', { errorCorrectionLevel: ecLevel });
+		const numModules = qr.modules.size;
+		const qrData = qr.modules.data;
+		const modulePx = 8;
+		const quietPx = 16;
+		const size = numModules * modulePx + quietPx * 2;
+
+		const canvas = document.createElement('canvas');
+		canvas.width = size;
+		canvas.height = size;
+		const ctx = canvas.getContext('2d', { alpha: false });
+		ctx.fillStyle = bgHex;
+		ctx.fillRect(0, 0, size, size);
+		ctx.fillStyle = fgHex;
+
+		for (let y = 0; y < numModules; y++) {
+			for (let x = 0; x < numModules; x++) {
+				if (qrData[y * numModules + x] === 1) {
+					ctx.fillRect(quietPx + x * modulePx, quietPx + y * modulePx, modulePx, modulePx);
+				}
+			}
 		}
-		var canvas = await renderQrToCanvas(dataString, ecLevel, fgHex, bgHex);
-		return canvasToBlob(canvas, format === 'webp' ? 'image/webp' : 'image/gif');
+		return new Promise(function (resolve) {
+			canvas.toBlob(resolve, 'image/webp', 1.0);
+		});
 	}
 
 	function isInputEmpty(dataString) {
@@ -804,6 +903,17 @@
 		}
 	}
 
+	function supportsWebpExport() {
+		return new Promise(function (resolve) {
+			var c = document.createElement('canvas');
+			c.width = 1;
+			c.height = 1;
+			c.toBlob(function (blob) {
+				resolve(blob && blob.type === 'image/webp');
+			}, 'image/webp');
+		});
+	}
+
 	function doInit() {
 		initializeElements();
 
@@ -836,6 +946,47 @@
 		if ('serviceWorker' in navigator) {
 			navigator.serviceWorker.register('sw.js').catch(() => {});
 		}
+
+		supportsWebpExport().then(function (supported) {
+			if (!supported && exportFormatSelect) {
+				var opt = exportFormatSelect.querySelector('option[value="webp"]');
+				if (opt) {
+					opt.remove();
+					if (exportFormatSelect.value === 'webp') {
+						exportFormatSelect.value = 'png';
+						updateQR();
+					}
+				}
+			}
+		});
+
+		var toolbar = document.createElement('div');
+		toolbar.className = 'keyboard-toolbar';
+		var doneBtn = document.createElement('button');
+		doneBtn.className = 'done-button';
+		doneBtn.textContent = tr('button.done');
+		doneBtn.addEventListener('pointerdown', function (e) {
+			e.preventDefault();
+			if (document.activeElement && document.activeElement !== document.body) {
+				document.activeElement.blur();
+			}
+			toolbar.classList.remove('visible');
+		});
+		toolbar.appendChild(doneBtn);
+		document.body.appendChild(toolbar);
+
+		var controlsContainer = document.querySelector('.controls-container');
+		controlsContainer.addEventListener('focusin', function (e) {
+			var tag = e.target.tagName;
+			var type = e.target.type;
+			if (
+				tag === 'TEXTAREA' ||
+				tag === 'SELECT' ||
+				(tag === 'INPUT' && !['color', 'checkbox', 'button', 'submit', 'range', 'file'].includes(type))
+			) {
+				toolbar.classList.add('visible');
+			}
+		});
 
 		let resizeTimeout;
 		window.addEventListener('resize', () => {
