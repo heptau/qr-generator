@@ -223,7 +223,7 @@
 					placeholderKey: 'placeholder.spayd_message',
 					maxLength: 60,
 				},
-				{ name: 'spayd_date', labelKey: 'field.spayd_date', type: 'date' },
+				{ name: 'spayd_date', labelKey: 'field.spayd_date', type: 'date', required: true },
 			],
 			formatter: (data) => {
 				let spaydString = 'SPD*1.0';
@@ -366,6 +366,97 @@
 				return lines.join('\n');
 			},
 		},
+		contact: {
+			fields: [
+				{ name: 'contact_name', labelKey: 'field.contact_name', type: 'text', placeholderKey: 'placeholder.contact_name' },
+				{ name: 'contact_nickname', labelKey: 'field.contact_nickname', type: 'text', placeholderKey: 'placeholder.contact_nickname' },
+				{ name: 'contact_phone', labelKey: 'field.contact_phone', type: 'tel', placeholderKey: 'placeholder.contact_phone' },
+				{
+					name: 'contact_email',
+					labelKey: 'field.contact_email',
+					type: 'email',
+					placeholderKey: 'placeholder.contact_email',
+					autocapitalize: 'none',
+					inputmode: 'email',
+				},
+				{ name: 'contact_address', labelKey: 'field.contact_address', type: 'text', placeholderKey: 'placeholder.contact_address' },
+				{ name: 'contact_org', labelKey: 'field.contact_org', type: 'text', placeholderKey: 'placeholder.contact_org' },
+				{ name: 'contact_title', labelKey: 'field.contact_title', type: 'text', placeholderKey: 'placeholder.contact_title' },
+				{
+					name: 'contact_url',
+					labelKey: 'field.contact_url',
+					type: 'url',
+					placeholderKey: 'placeholder.contact_url',
+					inputmode: 'url',
+				},
+				{ name: 'contact_note', labelKey: 'field.contact_note', type: 'textarea', placeholderKey: 'placeholder.contact_note', rows: 3 },
+				{ name: 'contact_birthday', labelKey: 'field.contact_birthday', type: 'date', required: true },
+			],
+			formatter: (data) => {
+				var parts = [];
+				if (data.contact_name) parts.push('N:' + data.contact_name);
+				if (data.contact_nickname) parts.push('NICKNAME:' + data.contact_nickname);
+				if (data.contact_phone) parts.push('TEL:' + data.contact_phone);
+				if (data.contact_email) parts.push('EMAIL:' + data.contact_email);
+				if (data.contact_address) parts.push('ADR:' + data.contact_address);
+				if (data.contact_org) parts.push('ORG:' + data.contact_org);
+				if (data.contact_title) parts.push('TITLE:' + data.contact_title);
+				if (data.contact_url) parts.push('URL:' + data.contact_url);
+				if (data.contact_note) parts.push('NOTE:' + data.contact_note);
+				if (data.contact_birthday) {
+					try {
+						var d = new Date(data.contact_birthday);
+						if (!isNaN(d.getTime())) {
+							var y = d.getFullYear();
+							var m = (d.getMonth() + 1).toString().padStart(2, '0');
+							var day = d.getDate().toString().padStart(2, '0');
+							parts.push('BDAY:' + y + m + day);
+						}
+					} catch (e) {
+						// ignore invalid date
+					}
+				}
+				return parts.length > 0 ? 'MECARD:' + parts.join(';') + ';;' : '';
+			},
+		},
+		calendar: {
+			fields: [
+				{ name: 'calendar_title', labelKey: 'field.calendar_title', type: 'text', placeholderKey: 'placeholder.calendar_title' },
+				{ name: 'calendar_start', labelKey: 'field.calendar_start', type: 'datetime-local', required: true },
+				{ name: 'calendar_end', labelKey: 'field.calendar_end', type: 'datetime-local', required: true },
+				{
+					name: 'calendar_location',
+					labelKey: 'field.calendar_location',
+					type: 'text',
+					placeholderKey: 'placeholder.calendar_location',
+				},
+				{
+					name: 'calendar_description',
+					labelKey: 'field.calendar_description',
+					type: 'textarea',
+					placeholderKey: 'placeholder.calendar_description',
+					rows: 3,
+				},
+			],
+			formatter: (data) => {
+				function fmtDt(val) {
+					if (!val) return null;
+					var match = val.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+					if (!match) return null;
+					return match[1] + match[2] + match[3] + 'T' + match[4] + match[5] + '00';
+				}
+				var dtstart = fmtDt(data.calendar_start);
+				if (!dtstart) return '';
+				var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//QR Generator//CS', 'BEGIN:VEVENT', 'DTSTART:' + dtstart];
+				var dtend = fmtDt(data.calendar_end);
+				if (dtend) lines.push('DTEND:' + dtend);
+				if (data.calendar_title) lines.push('SUMMARY:' + data.calendar_title);
+				if (data.calendar_location) lines.push('LOCATION:' + data.calendar_location);
+				if (data.calendar_description) lines.push('DESCRIPTION:' + data.calendar_description);
+				lines.push('END:VEVENT', 'END:VCALENDAR');
+				return lines.join('\n');
+			},
+		},
 	};
 
 	function setDiagnosticMessage(message, type) {
@@ -495,6 +586,7 @@
 					if (field.pattern) inputElement.pattern = field.pattern;
 					if (field.value) inputElement.value = field.value;
 					if (field.readonly) inputElement.readOnly = true;
+					if (field.required) inputElement.required = true;
 				}
 				inputElement.id = `field-${field.name}`;
 				inputElement.name = field.name;

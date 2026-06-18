@@ -237,6 +237,7 @@ body {
 .form-row input[type='password'],
 .form-row input[type='number'],
 .form-row input[type='date'],
+.form-row input[type='datetime-local'],
 .form-row textarea,
 .form-row select {
 	flex-grow: 1;
@@ -278,7 +279,8 @@ body {
 	}
 }
 
-.form-row input[type='date'] {
+.form-row input[type='date'],
+.form-row input[type='datetime-local'] {
 	min-width: 80px;
 	text-align: right;
 	direction: rtl;
@@ -287,18 +289,33 @@ body {
 	box-sizing: border-box;
 }
 
-.form-row input[type='date']::-webkit-datetime-edit {
+.form-row input[type='date']::-webkit-datetime-edit,
+.form-row input[type='datetime-local']::-webkit-datetime-edit {
 	text-align: right;
 	direction: ltr;
 }
 
-.form-row input[type='date']:valid::-webkit-datetime-edit {
+.form-row input[type='date']:valid::-webkit-datetime-edit,
+.form-row input[type='datetime-local']:valid::-webkit-datetime-edit {
 	text-align: right;
 }
 
-.form-row input[type='date']::-webkit-datetime-edit-fields-wrapper {
+.form-row input[type='date']::-webkit-datetime-edit-fields-wrapper,
+.form-row input[type='datetime-local']::-webkit-datetime-edit-fields-wrapper {
 	text-align: right;
 	direction: ltr;
+}
+
+.form-row input[type='date']:invalid::-webkit-datetime-edit,
+.form-row input[type='datetime-local']:invalid::-webkit-datetime-edit {
+	opacity: 0;
+}
+
+.form-row input[type='date']:focus::-webkit-datetime-edit,
+.form-row input[type='datetime-local']:focus::-webkit-datetime-edit,
+.form-row input[type='date']:valid::-webkit-datetime-edit,
+.form-row input[type='datetime-local']:valid::-webkit-datetime-edit {
+	opacity: 1;
 }
 
 .form-row input[type='number']::-webkit-inner-spin-button,
