@@ -8,7 +8,6 @@ window.__ = function (k) {
 		'label.foreground': 'Primer plano',
 		'label.background': 'Fondo',
 		'button.download': 'Descargar',
-		'button.done': 'Hecho',
 
 		'section.type': 'TIPO QR',
 		'section.content': 'CONTENIDO',

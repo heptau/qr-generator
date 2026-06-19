@@ -8,7 +8,6 @@ window.__ = function (k) {
 		'label.foreground': 'Foreground',
 		'label.background': 'Background',
 		'button.download': 'Download',
-		'button.done': 'Done',
 
 		'section.type': 'QR TYPE',
 		'section.content': 'CONTENT',

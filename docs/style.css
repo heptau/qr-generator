@@ -691,38 +691,3 @@ button.small-action-button:active {
 .toggle-slider::before {
 	transition: left 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
-.keyboard-toolbar {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	height: 44px;
-	background-color: var(--ios-header-background);
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
-	border-top: 0.5px solid var(--ios-separator-color);
-	display: none;
-	align-items: center;
-	justify-content: flex-end;
-	padding: 0 16px;
-	padding-bottom: env(safe-area-inset-bottom, 0px);
-	box-sizing: content-box;
-	z-index: 200;
-}
-
-.keyboard-toolbar.visible {
-	display: flex;
-}
-
-.keyboard-toolbar .done-button {
-	background: none;
-	border: none;
-	color: var(--ios-blue);
-	font-size: 17px;
-	font-weight: 600;
-	padding: 8px 12px;
-	cursor: pointer;
-	-webkit-tap-highlight-color: transparent;
-	touch-action: manipulation;
-}

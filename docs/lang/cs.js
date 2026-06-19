@@ -8,7 +8,6 @@ window.__ = function (k) {
 		'label.foreground': 'Popředí',
 		'label.background': 'Pozadí',
 		'button.download': 'Stáhnout',
-		'button.done': 'Hotovo',
 
 		'section.type': 'TYP QR',
 		'section.content': 'OBSAH',

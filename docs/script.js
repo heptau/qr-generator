@@ -1052,34 +1052,6 @@
 			}
 		});
 
-		var toolbar = document.createElement('div');
-		toolbar.className = 'keyboard-toolbar';
-		var doneBtn = document.createElement('button');
-		doneBtn.className = 'done-button';
-		doneBtn.textContent = tr('button.done');
-		doneBtn.addEventListener('pointerdown', function (e) {
-			e.preventDefault();
-			if (document.activeElement && document.activeElement !== document.body) {
-				document.activeElement.blur();
-			}
-			toolbar.classList.remove('visible');
-		});
-		toolbar.appendChild(doneBtn);
-		document.body.appendChild(toolbar);
-
-		var controlsContainer = document.querySelector('.controls-container');
-		controlsContainer.addEventListener('focusin', function (e) {
-			var tag = e.target.tagName;
-			var type = e.target.type;
-			if (
-				tag === 'TEXTAREA' ||
-				tag === 'SELECT' ||
-				(tag === 'INPUT' && !['color', 'checkbox', 'button', 'submit', 'range', 'file'].includes(type))
-			) {
-				toolbar.classList.add('visible');
-			}
-		});
-
 		let resizeTimeout;
 		window.addEventListener('resize', () => {
 			clearTimeout(resizeTimeout);
