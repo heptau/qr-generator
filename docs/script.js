@@ -54,6 +54,37 @@
 		return 'CZ' + checkDigits + bban;
 	}
 
+	function validateIban(iban) {
+		if (!iban) return false;
+		var cleaned = iban.replace(/\s+/g, '').toUpperCase();
+		if (cleaned.length < 4 || cleaned.length > 34) return false;
+		var rearranged = cleaned.substring(4) + cleaned.substring(0, 4);
+		var numeric = '';
+		for (var i = 0; i < rearranged.length; i++) {
+			var c = rearranged.charCodeAt(i);
+			if (c >= 65 && c <= 90) {
+				numeric += String(c - 55);
+			} else {
+				numeric += rearranged[i];
+			}
+		}
+		var mod = 0;
+		for (var j = 0; j < numeric.length; j++) {
+			mod = (mod * 10 + parseInt(numeric[j], 10)) % 97;
+		}
+		return mod === 1;
+	}
+
+	function validateIbanElement(el) {
+		var raw = el.value.replace(/\s+/g, '').toUpperCase();
+		var iban = czAccountToIban(raw) || raw;
+		if (iban && validateIban(iban)) {
+			el.classList.remove('iban-invalid');
+		} else {
+			el.classList.add('iban-invalid');
+		}
+	}
+
 	const qrCodeTypes = {
 		text: {
 			fields: [{ name: 'textContent', labelKey: 'field.textContent', type: 'textarea', placeholderKey: 'placeholder.text', rows: 4 }],
@@ -167,6 +198,14 @@
 		spayd: {
 			fields: [
 				{
+					name: 'spayd_name',
+					labelKey: 'field.spayd_name',
+					type: 'text',
+					placeholderKey: 'placeholder.spayd_name',
+					autocapitalize: 'words',
+					maxLength: 70,
+				},
+				{
 					name: 'spayd_iban',
 					labelKey: 'field.spayd_iban',
 					type: 'text',
@@ -174,6 +213,14 @@
 					inputmode: 'text',
 					autocapitalize: 'characters',
 					pattern: '[A-Z]{2}[0-9]{2}[A-Z0-9]{4}[A-Z0-9]{0,16}|\\d{0,6}-?\\d{3,20}/\\d{4}',
+					required: true,
+				},
+				{
+					name: 'spayd_bic',
+					labelKey: 'field.spayd_bic',
+					type: 'text',
+					placeholderKey: 'placeholder.spayd_bic',
+					autocapitalize: 'characters',
 				},
 				{
 					name: 'spayd_amount',
@@ -182,15 +229,14 @@
 					placeholderKey: 'placeholder.spayd_amount',
 					step: '0.01',
 					inputmode: 'decimal',
+					renderCurrency: true,
 				},
 				{
 					name: 'spayd_currency',
-					labelKey: 'field.spayd_currency',
-					type: 'text',
+					type: 'skip',
 					value: 'CZK',
-					autocapitalize: 'characters',
-					pattern: '[A-Z]{3}',
 					maxLength: 3,
+					autocapitalize: 'characters',
 				},
 				{
 					name: 'spayd_vs',
@@ -224,6 +270,19 @@
 					maxLength: 60,
 				},
 				{ name: 'spayd_date', labelKey: 'field.spayd_date', type: 'date', required: true },
+				{
+					name: 'spayd_instant',
+					labelKey: 'field.spayd_instant',
+					type: 'checkbox',
+					defaultValue: true,
+				},
+				{
+					name: 'spayd_url',
+					labelKey: 'field.spayd_url',
+					type: 'url',
+					placeholderKey: 'placeholder.spayd_url',
+					inputmode: 'url',
+				},
 			],
 			formatter: (data) => {
 				let spaydString = 'SPD*1.0';
@@ -247,8 +306,10 @@
 				var rawIban = data.spayd_iban ? data.spayd_iban.replace(/\s+/g, '').toUpperCase() : '';
 				var iban = czAccountToIban(rawIban) || rawIban;
 				appendIfPresent('ACC', iban || null);
+				appendIfPresent('RN', data.spayd_name);
 				appendAmount('AM', data.spayd_amount);
 				appendIfPresent('CC', data.spayd_currency || 'CZK');
+				appendIfPresent('BIC', data.spayd_bic);
 				appendIfPresent('X-VS', data.spayd_vs, true, 10);
 				appendIfPresent('X-KS', data.spayd_ks, true, 4);
 				appendIfPresent('X-SS', data.spayd_ss, true, 10);
@@ -266,6 +327,10 @@
 						console.warn('Neplatný formát data pro SPAYD DT:', data.spayd_date);
 					}
 				}
+				if (data.spayd_instant === true || data.spayd_instant === 'true') {
+					spaydString += '*PT:IP';
+				}
+				appendIfPresent('X-URL', data.spayd_url);
 				return spaydString.includes('*ACC:') && spaydString.length > 'SPD*1.0*ACC:'.length ? spaydString : '';
 			},
 		},
@@ -298,11 +363,11 @@
 					placeholderKey: 'placeholder.sepa_amount',
 					step: '0.01',
 					inputmode: 'decimal',
+					renderCurrency: true,
 				},
 				{
 					name: 'sepa_currency',
-					labelKey: 'field.sepa_currency',
-					type: 'text',
+					type: 'skip',
 					value: 'EUR',
 					autocapitalize: 'characters',
 					pattern: '[A-Z]{3}',
@@ -462,7 +527,11 @@
 	function setDiagnosticMessage(message, type) {
 		if (!diagnosticMessageContainer) return;
 		diagnosticMessageContainer.innerHTML = '';
-		if (!message) return;
+		if (!message) {
+			diagnosticMessageContainer.classList.remove('has-content');
+			return;
+		}
+		diagnosticMessageContainer.classList.add('has-content');
 		const p = document.createElement('p');
 		p.textContent = message;
 		if (type === 'success') p.classList.add('message-success');
@@ -522,20 +591,12 @@
 		fieldset.className = 'control-group';
 
 		typeConfig.fields.forEach((field) => {
+			if (field.type === 'skip' || field.type === 'button') return;
+
 			const row = document.createElement('div');
 			row.className = 'form-row';
 
-			if (field.type === 'button') {
-				const button = document.createElement('button');
-				button.type = 'button';
-				button.textContent = field.textKey ? tr(field.textKey) : field.text;
-				button.className = 'small-action-button';
-				if (field.onClickFunction && typeof window[field.onClickFunction] === 'function') {
-					button.addEventListener('click', window[field.onClickFunction]);
-				}
-				row.style.justifyContent = 'center';
-				row.appendChild(button);
-			} else if (field.type === 'checkbox') {
+			if (field.type === 'checkbox') {
 				const label = document.createElement('label');
 				label.htmlFor = `field-${field.name}`;
 				label.textContent = field.labelKey ? tr(field.labelKey) : field.label;
@@ -550,13 +611,19 @@
 				inputElement.id = `field-${field.name}`;
 				inputElement.name = field.name;
 				inputElement.checked = field.defaultValue === true;
+				var savedCheck = loadFieldValue(field.name);
+				if (savedCheck !== null) inputElement.checked = savedCheck === '1';
 
 				const slider = document.createElement('span');
 				slider.className = 'toggle-slider';
 
-				inputElement.addEventListener('change', updateQR);
+				inputElement.addEventListener('change', function () {
+					saveFieldValue(field.name);
+					updateQR();
+				});
 				toggleLabel.appendChild(inputElement);
 				toggleLabel.appendChild(slider);
+				toggleLabel.style.marginLeft = 'auto';
 				row.appendChild(toggleLabel);
 			} else {
 				const label = document.createElement('label');
@@ -587,6 +654,18 @@
 					if (field.value) inputElement.value = field.value;
 					if (field.readonly) inputElement.readOnly = true;
 					if (field.required) inputElement.required = true;
+					if (field.type === 'date') {
+						var today = new Date();
+						inputElement.min =
+							today.getFullYear() +
+							'-' +
+							String(today.getMonth() + 1).padStart(2, '0') +
+							'-' +
+							String(today.getDate()).padStart(2, '0');
+					}
+					var saved = loadFieldValue(field.name);
+					if (saved !== null) inputElement.value = saved;
+					if (field.name.includes('iban') && saved !== null) validateIbanElement(inputElement);
 				}
 				inputElement.id = `field-${field.name}`;
 				inputElement.name = field.name;
@@ -612,16 +691,106 @@
 						if (converted) {
 							this.value = converted;
 						}
+						validateIbanElement(this);
+						saveFieldValue(field.name);
 						updateQR();
+					});
+					inputElement.addEventListener('input', function () {
+						inputElement.classList.remove('iban-invalid');
 					});
 				}
 
-				inputElement.addEventListener('input', updateQR);
-				row.appendChild(inputElement);
+				inputElement.addEventListener('input', function () {
+					saveFieldValue(field.name);
+					updateQR();
+				});
+				if (field.renderCurrency) {
+					var curFieldName = field.name.replace('_amount', '_currency');
+					var curField = qrCodeTypes[qrTypeSelect.value].fields.find(function (f) {
+						return f.name === curFieldName;
+					});
+					var combo = document.createElement('div');
+					combo.style.cssText = 'display:flex;gap:4px;flex:1;align-items:center;min-width:0;';
+					inputElement.style.cssText =
+						'flex:1;min-width:0;text-align:right;width:auto;padding:11px 0;border:none;background:transparent;font-size:17px;color:var(--ios-secondary-text-color);outline:none;-webkit-appearance:none;';
+					combo.appendChild(inputElement);
+					var curInput = document.createElement('input');
+					curInput.type = 'text';
+					curInput.id = 'field-' + curFieldName;
+					curInput.name = curFieldName;
+					curInput.maxLength = 3;
+					curInput.autocomplete = 'off';
+					curInput.style.cssText =
+						'flex:none;width:42px;text-align:center;text-transform:uppercase;padding:11px 0;border:none;background:transparent;font-size:17px;color:var(--ios-secondary-text-color);outline:none;-webkit-appearance:none;';
+					if (curField && curField.value) curInput.value = curField.value;
+					var savedCur = loadFieldValue(curFieldName);
+					if (savedCur !== null) curInput.value = savedCur;
+					curInput.addEventListener('input', function () {
+						saveFieldValue(curFieldName);
+						updateQR();
+					});
+					combo.appendChild(curInput);
+					row.appendChild(combo);
+				} else {
+					row.appendChild(inputElement);
+				}
 			}
 			fieldset.appendChild(row);
+			if (field.condition) {
+				var controller = document.getElementById('field-' + field.condition.field);
+				if (controller) {
+					function toggleFieldVisibility() {
+						row.style.display = String(controller.value) === String(field.condition.value) ? '' : 'none';
+					}
+					controller.addEventListener('change', function () {
+						toggleFieldVisibility();
+						updateQR();
+					});
+					toggleFieldVisibility();
+				}
+			}
 		});
 		dynamicFormFieldsContainer.appendChild(fieldset);
+
+		if (typeKey === 'spayd') {
+			var dateInput = document.getElementById('field-spayd_date');
+			var instantCheck = document.getElementById('field-spayd_instant');
+			if (dateInput && instantCheck) {
+				function syncDateWithInstant() {
+					var val = dateInput.value;
+					var today = new Date();
+					today.setHours(0, 0, 0, 0);
+					if (val) {
+						var selected = new Date(val + 'T00:00:00');
+						if (selected > today) {
+							instantCheck.checked = false;
+						}
+					}
+				}
+				dateInput.addEventListener('change', function () {
+					syncDateWithInstant();
+					saveFieldValue('spayd_date');
+					updateQR();
+				});
+				instantCheck.addEventListener('change', function () {
+					if (instantCheck.checked) {
+						var val = dateInput.value;
+						if (val) {
+							var today = new Date();
+							today.setHours(0, 0, 0, 0);
+							var selected = new Date(val + 'T00:00:00');
+							if (selected.getTime() !== today.getTime()) {
+								dateInput.value = '';
+							}
+						}
+					}
+					saveFieldValue('spayd_instant');
+					updateQR();
+				});
+				syncDateWithInstant();
+			}
+		}
+
 		updateQR();
 	}
 
@@ -637,10 +806,44 @@
 			if (inputElement) {
 				formData[field.name] = field.type === 'checkbox' ? inputElement.checked : inputElement.value;
 			} else {
-				formData[field.name] = field.type === 'checkbox' ? false : '';
+				formData[field.name] = field.value || (field.type === 'checkbox' ? false : '');
 			}
 		});
 		return typeConfig.formatter(formData);
+	}
+
+	function saveFieldValue(name) {
+		var el = document.getElementById('field-' + name);
+		if (el) {
+			try {
+				localStorage.setItem('qrg_' + name, el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value);
+			} catch (e) {
+				/* ok */
+			}
+		}
+	}
+
+	function loadFieldValue(name) {
+		try {
+			var v = localStorage.getItem('qrg_' + name);
+			if (v !== null && v !== 'undefined') return v;
+		} catch (e) {
+			/* ok */
+		}
+		return null;
+	}
+
+	function cleanupStorage() {
+		try {
+			for (var i = localStorage.length - 1; i >= 0; i--) {
+				var key = localStorage.key(i);
+				if (key && key.indexOf('qrg_') === 0 && localStorage.getItem(key) === 'undefined') {
+					localStorage.removeItem(key);
+				}
+			}
+		} catch (e) {
+			/* ok */
+		}
 	}
 
 	function initializeElements() {
@@ -1008,8 +1211,24 @@
 
 	function doInit() {
 		initializeElements();
+		cleanupStorage();
+
+		var savedType = loadFieldValue('__type');
+		if (
+			savedType !== null &&
+			Array.from(qrTypeSelect.options).some(function (o) {
+				return o.value === savedType;
+			})
+		) {
+			qrTypeSelect.value = savedType;
+		}
 
 		qrTypeSelect.addEventListener('change', (event) => {
+			try {
+				localStorage.setItem('qrg___type', event.target.value);
+			} catch (e) {
+				/* ok */
+			}
 			renderQrTypeForm(event.target.value);
 		});
 		renderQrTypeForm(qrTypeSelect.value);

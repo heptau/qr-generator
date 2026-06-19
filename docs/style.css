@@ -253,6 +253,10 @@ body {
 	width: 100%;
 }
 
+.form-row input.iban-invalid {
+	color: #ff3b30 !important;
+}
+
 .form-row input[type='search']::-webkit-search-decoration,
 .form-row input[type='search']::-webkit-search-results-button,
 .form-row input[type='search']::-webkit-search-results-decoration {
@@ -636,8 +640,11 @@ button.small-action-button:active {
 	background-color: var(--ios-header-background);
 	backdrop-filter: blur(20px);
 	-webkit-backdrop-filter: blur(20px);
-	border: 0.5px solid var(--ios-separator-color);
 	border-radius: 10px;
+}
+
+#diagnosticMessageContainer.has-content {
+	border: 0.5px solid var(--ios-separator-color);
 }
 
 #diagnosticMessageContainer > p {
